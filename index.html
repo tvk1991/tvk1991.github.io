@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bảng Tính - Hoa Hồng CTV </title>
+    <title>Bảng Tính - Hoa Hồng CTV</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
@@ -171,9 +171,10 @@
             border: 2px solid #d1d9e6;
             border-radius: 10px;
             font-size: 16px;
-            text-align: center;
+            text-align: right;
             transition: all 0.3s;
             font-weight: 500;
+            font-family: monospace;
         }
         
         .input-cell input:focus {
@@ -186,6 +187,7 @@
             font-weight: 700;
             color: #1a2a6c;
             font-size: 16px;
+            font-family: monospace;
         }
         
         .total-row {
@@ -232,6 +234,16 @@
         #addRowBtn:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        #deleteRowBtn {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+        }
+        
+        #deleteRowBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 152, 0, 0.3);
         }
         
         #resetBtn {
@@ -340,19 +352,27 @@
     </style>
 </head>
 <body>
-    
-                <div class="current-time" id="currentTime">Đang cập nhật thời gian...</div>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-calculator"></i> Bảng Tính Hoa Hồng CTV</h1>
+           
+        </header>
+        
+             
+        <div class="calculator-container">
+            <div class="formula-display">
+              <div class="current-time" id="currentTime">Đang cập nhật thời gian...</div>
             </div>
             
             <table id="calculationTable">
                 <thead>
                     <tr>
-                        <th>STT</th>
-                        <th>BILL (A)</th>
-                        <th>0.4%</th>
-                        <th>BILL (B)</th>
-                        <th>0.2%</th>
-                        <th>Tổng</th>
+                        <th width="8%">STT</th>
+                        <th width="22%">BILL (A) vnđ</th>
+                        <th width="18%">0.4% vnđ</th>
+                        <th width="22%">BILL (B) vnđ</th>
+                        <th width="18%">0.2% vnđ</th>
+                        <th width="12%">Tổng vnđ</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -361,11 +381,11 @@
                 <tfoot>
                     <tr class="total-row">
                         <td><strong>TỔNG</strong></td>
-                        <td id="totalAInput">0 vnđ</td>
-                        <td id="totalA">0 vnđ</td>
-                        <td id="totalBInput">0 vnđ</td>
-                        <td id="totalB">0 vnđ</td>
-                        <td id="grandTotal">0 vnđ</td>
+                        <td id="totalAInput" class="result-cell">0 vnđ</td>
+                        <td id="totalA" class="result-cell">0 vnđ</td>
+                        <td id="totalBInput" class="result-cell">0 vnđ</td>
+                        <td id="totalB" class="result-cell">0 vnđ</td>
+                        <td id="grandTotal" class="result-cell">0 vnđ</td>
                     </tr>
                 </tfoot>
             </table>
@@ -373,6 +393,9 @@
             <div class="action-buttons">
                 <button id="addRowBtn">
                     <i class="fas fa-plus-circle"></i> Thêm Hàng Mới
+                </button>
+                <button id="deleteRowBtn">
+                    <i class="fas fa-trash-alt"></i> Xóa Hàng Cuối
                 </button>
                 <button id="resetBtn">
                     <i class="fas fa-redo-alt"></i> Đặt Lại Bảng Tính
@@ -385,19 +408,19 @@
         
         <div class="footer">
             <div class="export-info">
-                <p><i class="fas fa-download"></i> File Excel xuất ra sẽ có định dạng tiền Việt Nam: 1.000.Tr vnđ</p>
+                <p><i class="fas fa-download"></i> File Excel xuất ra sẽ có định dạng tiền Việt Nam: 1.000 TR vnđ</p>
                 <p><i class="fas fa-calendar-alt"></i> Tên file tự động chứa ngày giờ xuất báo cáo</p>
             </div>
             <div>
                 <p>Bảng tính / Hoa Hồng CTV ©2026</p>
-				<p id="lastExportInfo">Chưa có file nào được xuất</p>
-				<p>Thiết Kế Bởi 21 Quân sự</p>
+                <p id="lastExportInfo">Chưa có file nào được xuất</p>
+                <p>Thiết Kế Bởi 21 Quân sự</p>
             </div>
         </div>
     </div>
 
     <script>
-        // Khởi tạo bảng với 3 hàng mặc định
+        // Khởi tạo bảng với 9 hàng mặc định
         document.addEventListener('DOMContentLoaded', function() {
             initializeTable();
             updateTotals();
@@ -408,6 +431,7 @@
             
             // Thêm sự kiện cho các nút
             document.getElementById('addRowBtn').addEventListener('click', addNewRow);
+            document.getElementById('deleteRowBtn').addEventListener('click', deleteLastRow);
             document.getElementById('resetBtn').addEventListener('click', resetTable);
             document.getElementById('exportExcelBtn').addEventListener('click', exportToExcel);
             
@@ -431,15 +455,44 @@
             document.getElementById('currentTime').textContent = formattedTime;
         }
         
-        // Khởi tạo bảng với 3 hàng dữ liệu
+        // Khởi tạo bảng với 9 hàng dữ liệu
         function initializeTable() {
             const tableBody = document.getElementById('tableBody');
             tableBody.innerHTML = '';
             
-            // Thêm 3 hàng mặc định
+            // Thêm 9 hàng mặc định
             for (let i = 1; i <= 9; i++) {
                 addRow(i);
             }
+        }
+        
+        // Định dạng số theo chuẩn tiền Việt Nam với dấu chấm phân cách
+        function formatCurrencyVND(num) {
+            // Làm tròn đến 0 chữ số thập phân
+            const roundedNum = Math.round(num);
+            
+            // Định dạng số với dấu chấm phân cách hàng nghìn
+            const formatted = roundedNum.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            
+            // Thêm "vnđ" vào sau
+            return formatted + ' vnđ';
+        }
+        
+        // Định dạng input với dấu chấm phân cách
+        function formatInputValue(input) {
+            const value = input.value.replace(/\./g, '');
+            if (!value || isNaN(value)) {
+                input.value = '';
+                return 0;
+            }
+            
+            const numValue = parseInt(value);
+            if (!isNaN(numValue)) {
+                // Format với dấu chấm phân cách hàng nghìn
+                input.value = numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return numValue;
+            }
+            return 0;
         }
         
         // Thêm một hàng mới vào bảng
@@ -452,11 +505,11 @@
             newRow.innerHTML = `
                 <td>${rowNumber}</td>
                 <td class="input-cell">
-                    <input type="number" id="valueA-${rowNumber}" class="value-input" data-type="A" min="0" step="0.01" placeholder="Nhập giá trị">
+                    <input type="text" id="valueA-${rowNumber}" class="value-input" data-type="A" placeholder="Nhập giá trị">
                 </td>
                 <td class="result-cell" id="resultA-${rowNumber}">0 vnđ</td>
                 <td class="input-cell">
-                    <input type="number" id="valueB-${rowNumber}" class="value-input" data-type="B" min="0" step="0.01" placeholder="Nhập giá trị">
+                    <input type="text" id="valueB-${rowNumber}" class="value-input" data-type="B" placeholder="Nhập giá trị">
                 </td>
                 <td class="result-cell" id="resultB-${rowNumber}">0 vnđ</td>
                 <td class="result-cell" id="rowTotal-${rowNumber}">0 vnđ</td>
@@ -467,30 +520,38 @@
             // Thêm sự kiện cho các ô input
             const inputs = newRow.querySelectorAll('.value-input');
             inputs.forEach(input => {
+                // Xử lý khi người dùng nhập liệu
                 input.addEventListener('input', function() {
+                    // Lấy giá trị số từ input đã được format
+                    const numericValue = formatInputValue(this);
+                    
+                    // Tính toán cho hàng này
                     calculateRow(rowNumber);
                     updateTotals();
                     saveToLocalStorage();
                 });
+                
+                // Xử lý khi người dùng paste
+                input.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    const pastedText = e.clipboardData.getData('text');
+                    this.value = pastedText.replace(/\./g, '');
+                    formatInputValue(this);
+                    
+                    // Kích hoạt sự kiện input
+                    this.dispatchEvent(new Event('input'));
+                });
             });
-        }
-        
-        // Định dạng số theo chuẩn tiền Việt Nam
-        function formatCurrencyVND(num) {
-            // Định dạng số với dấu chấm phân cách hàng nghìn, dấu phẩy thập phân
-            let formatted = num.toLocaleString('vi-VN', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-            // Thêm "vnđ" vào sau
-            return formatted + ' vnđ';
         }
         
         // Tính toán giá trị cho một hàng cụ thể
         function calculateRow(rowNumber) {
-            // Lấy giá trị từ input A và B
-            const valueA = parseFloat(document.getElementById(`valueA-${rowNumber}`).value) || 0;
-            const valueB = parseFloat(document.getElementById(`valueB-${rowNumber}`).value) || 0;
+            // Lấy giá trị từ input A và B (đã được format)
+            const inputA = document.getElementById(`valueA-${rowNumber}`);
+            const inputB = document.getElementById(`valueB-${rowNumber}`);
+            
+            const valueA = formatInputValue(inputA);
+            const valueB = formatInputValue(inputB);
             
             // Tính toán 0.4% của A và 0.2% của B
             const resultA = valueA * 0.004;
@@ -503,6 +564,8 @@
             // Tính tổng cho hàng
             const rowTotal = resultA + resultB;
             document.getElementById(`rowTotal-${rowNumber}`).innerHTML = `<span class="currency-vnd">${formatCurrencyVND(rowTotal)}</span>`;
+            
+            return { valueA, valueB, resultA, resultB, rowTotal };
         }
         
         // Cập nhật tổng của tất cả các hàng
@@ -518,27 +581,25 @@
             rows.forEach(row => {
                 const rowId = row.id.split('-')[1];
                 
-                // Tính tổng giá trị đầu vào A
-                const valueA = parseFloat(document.getElementById(`valueA-${rowId}`).value) || 0;
+                // Lấy giá trị từ input (đã được format)
+                const inputA = document.getElementById(`valueA-${rowId}`);
+                const inputB = document.getElementById(`valueB-${rowId}`);
+                
+                const valueA = formatInputValue(inputA);
+                const valueB = formatInputValue(inputB);
+                
+                // Tính tổng giá trị đầu vào
                 totalAInput += valueA;
-                
-                // Tính tổng kết quả 0.4% của A
-                const resultAText = document.getElementById(`resultA-${rowId}`).textContent;
-                const resultA = parseFloat(resultAText.replace(/\./g, '').replace(',', '.').replace(' vnđ', '')) || 0;
-                totalAResult += resultA;
-                
-                // Tính tổng giá trị đầu vào B
-                const valueB = parseFloat(document.getElementById(`valueB-${rowId}`).value) || 0;
                 totalBInput += valueB;
                 
-                // Tính tổng kết quả 0.2% của B
-                const resultBText = document.getElementById(`resultB-${rowId}`).textContent;
-                const resultB = parseFloat(resultBText.replace(/\./g, '').replace(',', '.').replace(' vnđ', '')) || 0;
-                totalBResult += resultB;
+                // Lấy kết quả từ hiển thị (đã được tính)
+                const resultA = parseFloat(document.getElementById(`resultA-${rowId}`).textContent.replace(/\./g, '').replace(' vnđ', '')) || 0;
+                const resultB = parseFloat(document.getElementById(`resultB-${rowId}`).textContent.replace(/\./g, '').replace(' vnđ', '')) || 0;
+                const rowTotal = parseFloat(document.getElementById(`rowTotal-${rowId}`).textContent.replace(/\./g, '').replace(' vnđ', '')) || 0;
                 
-                // Tính tổng của hàng
-                const rowTotalText = document.getElementById(`rowTotal-${rowId}`).textContent;
-                const rowTotal = parseFloat(rowTotalText.replace(/\./g, '').replace(',', '.').replace(' vnđ', '')) || 0;
+                // Tính tổng kết quả
+                totalAResult += resultA;
+                totalBResult += resultB;
                 grandTotal += rowTotal;
             });
             
@@ -561,6 +622,23 @@
             saveToLocalStorage();
         }
         
+        // Xóa hàng cuối cùng
+        function deleteLastRow() {
+            const tableBody = document.getElementById('tableBody');
+            const rows = tableBody.querySelectorAll('tr');
+            
+            if (rows.length > 1) { // Giữ lại ít nhất 1 hàng
+                if (confirm("Bạn có chắc chắn muốn xóa hàng cuối cùng?")) {
+                    tableBody.removeChild(rows[rows.length - 1]);
+                    updateRowNumbers();
+                    updateTotals();
+                    saveToLocalStorage();
+                }
+            } else {
+                alert("Không thể xóa hàng cuối cùng. Bảng phải có ít nhất 1 hàng dữ liệu!");
+            }
+        }
+        
         // Cập nhật số thứ tự cho tất cả các hàng
         function updateRowNumbers() {
             const rows = document.querySelectorAll('#tableBody tr');
@@ -581,25 +659,6 @@
                 if (resultA) resultA.id = `resultA-${rowNumber}`;
                 if (resultB) resultB.id = `resultB-${rowNumber}`;
                 if (rowTotal) rowTotal.id = `rowTotal-${rowNumber}`;
-                
-                // Cập nhật sự kiện
-                if (valueAInput) {
-                    valueAInput.replaceWith(valueAInput.cloneNode(true));
-                    row.querySelector(`#valueA-${rowNumber}`).addEventListener('input', function() {
-                        calculateRow(rowNumber);
-                        updateTotals();
-                        saveToLocalStorage();
-                    });
-                }
-                
-                if (valueBInput) {
-                    valueBInput.replaceWith(valueBInput.cloneNode(true));
-                    row.querySelector(`#valueB-${rowNumber}`).addEventListener('input', function() {
-                        calculateRow(rowNumber);
-                        updateTotals();
-                        saveToLocalStorage();
-                    });
-                }
             });
         }
         
@@ -620,8 +679,12 @@
             
             rows.forEach(row => {
                 const rowId = row.id.split('-')[1];
-                const valueA = document.getElementById(`valueA-${rowId}`).value;
-                const valueB = document.getElementById(`valueB-${rowId}`).value;
+                const inputA = document.getElementById(`valueA-${rowId}`);
+                const inputB = document.getElementById(`valueB-${rowId}`);
+                
+                // Lưu giá trị số (không có dấu chấm phân cách)
+                const valueA = inputA.value.replace(/\./g, '');
+                const valueB = inputB.value.replace(/\./g, '');
                 
                 data.push({
                     valueA: valueA,
@@ -648,9 +711,19 @@
                     const rowNumber = index + 1;
                     addRow(rowNumber);
                     
-                    // Đặt giá trị đã lưu
-                    document.getElementById(`valueA-${rowNumber}`).value = rowData.valueA;
-                    document.getElementById(`valueB-${rowNumber}`).value = rowData.valueB;
+                    // Đặt giá trị đã lưu (định dạng với dấu chấm phân cách)
+                    const inputA = document.getElementById(`valueA-${rowNumber}`);
+                    const inputB = document.getElementById(`valueB-${rowNumber}`);
+                    
+                    if (rowData.valueA && rowData.valueA !== '') {
+                        const numValueA = parseInt(rowData.valueA) || 0;
+                        inputA.value = numValueA.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    }
+                    
+                    if (rowData.valueB && rowData.valueB !== '') {
+                        const numValueB = parseInt(rowData.valueB) || 0;
+                        inputB.value = numValueB.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    }
                     
                     // Tính toán cho hàng này
                     calculateRow(rowNumber);
@@ -672,11 +745,11 @@
             // Thêm tiêu đề
             wsData.push([
                 'STT', 
-                'BILL (A)', 
-                '0.4%', 
-                'BILL (B)', 
-                '0.2%', 
-                'Tổng'
+                'BILL (A) vnđ', 
+                '0.4% vnđ', 
+                'BILL (B) vnđ', 
+                '0.2% vnđ', 
+                'Tổng vnđ'
             ]);
             
             // Thêm dữ liệu từ bảng
@@ -684,30 +757,20 @@
             rows.forEach((row, index) => {
                 const rowNumber = index + 1;
                 
-                // Lấy giá trị gốc
-                const valueA = parseFloat(document.getElementById(`valueA-${rowNumber}`).value) || 0;
-                const valueB = parseFloat(document.getElementById(`valueB-${rowNumber}`).value) || 0;
-                
-                // Tính toán kết quả
-                const resultA = valueA * 0.004;
-                const resultB = valueB * 0.002;
-                const rowTotal = resultA + resultB;
-                
-                // Định dạng theo tiền Việt Nam cho Excel
-                const formatForExcel = (num) => {
-                    return num.toLocaleString('vi-VN', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    }) + ' vnđ';
-                };
+                // Lấy giá trị từ các ô hiển thị
+                const valueAInput = document.getElementById(`valueA-${rowNumber}`).value || '0';
+                const resultAText = document.getElementById(`resultA-${rowNumber}`).textContent;
+                const valueBInput = document.getElementById(`valueB-${rowNumber}`).value || '0';
+                const resultBText = document.getElementById(`resultB-${rowNumber}`).textContent;
+                const rowTotalText = document.getElementById(`rowTotal-${rowNumber}`).textContent;
                 
                 wsData.push([
                     rowNumber,
-                    formatForExcel(valueA),
-                    formatForExcel(resultA),
-                    formatForExcel(valueB),
-                    formatForExcel(resultB),
-                    formatForExcel(rowTotal)
+                    valueAInput,
+                    resultAText,
+                    valueBInput,
+                    resultBText,
+                    rowTotalText
                 ]);
             });
             
@@ -735,19 +798,19 @@
             const exportTime = new Date().toLocaleString('vi-VN');
             wsData.push(['Thời gian xuất file:', exportTime]);
             wsData.push(['Tổng số hàng dữ liệu:', rows.length]);
-            wsData.push(['Định dạng tiền tệ:', 'Việt Nam (1.000 TR vnđ)']);
+            wsData.push(['Thiết Kế Bởi:', '21 QUÂN SỰ']);
             
             // Tạo worksheet từ dữ liệu
             const ws = XLSX.utils.aoa_to_sheet(wsData);
             
             // Thiết lập độ rộng cột
             const wscols = [
-                {wch: 22},  // STT
-                {wch: 22}, // Giá trị gốc (A)
-                {wch: 20}, // 0.4% của A
-                {wch: 22}, // Giá trị gốc (B)
-                {wch: 20}, // 0.2% của B
-                {wch: 20}  // Tổng hàng
+                {wch: 19},   // STT
+                {wch: 25},  // BILL (A)
+                {wch: 20},  // 0.4% của A
+                {wch: 25},  // BILL (B)
+                {wch: 20},  // 0.2% của B
+                {wch: 20}   // Tổng hàng
             ];
             ws['!cols'] = wscols;
             
@@ -776,16 +839,16 @@
             }
             
             // Thêm worksheet vào workbook
-            XLSX.utils.book_append_sheet(wb, ws, "Bảng tính phần trăm");
+            XLSX.utils.book_append_sheet(wb, ws, "Hoa hồng CTV");
             
             // Tạo tên file với ngày giờ hiện tại
             const now = new Date();
-            const fileName = `Hoa_Hong_${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
+            const fileName = `Hoa_Hong_CTV_${now.getFullYear()}-${(now.getMonth()+1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}.xlsx`;
             
             // Xuất file Excel
             XLSX.writeFile(wb, fileName);
             
- h        // Hiển thị thông báo
+            // Hiển thị thông báo
             document.getElementById('lastExportInfo').textContent = `Đã xuất file: ${fileName}`;
             document.getElementById('lastExportInfo').classList.add('highlight');
             
@@ -793,6 +856,9 @@
             setTimeout(() => {
                 document.getElementById('lastExportInfo').classList.remove('highlight');
             }, 2000);
+            
+            // Lưu thời gian xuất file
+            saveToLocalStorage();
         }
     </script>
 </body>
